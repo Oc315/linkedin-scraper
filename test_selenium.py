@@ -84,7 +84,7 @@ if __name__ == "__main__":
     linkedin_username = ''
     linkedin_password = ''  
 
-    keyword = 'Procurement Cfficer at University'
+    keyword = 'Procurement Officer at University'
     scraper = LinkedInScraper(linkedin_username, linkedin_password)
     profile_links = scraper.scrape(keyword, num_pages=10)
 
