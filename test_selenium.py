@@ -78,8 +78,8 @@ class LinkedInScraper:
 #%%
 # Getting URLs - Usage
 if __name__ == "__main__":
-    linkedin_username = 'oceanus315@gmail.com'
-    linkedin_password = 'Vampirezzy2'  
+    linkedin_username = ''
+    linkedin_password = ''  
 
     keyword = 'procurement officer'
     scraper = LinkedInScraper(linkedin_username, linkedin_password)
@@ -214,8 +214,8 @@ class LinkedInProfileScraper:
 #%%
 # Usage for scraping profile details
 if __name__ == "__main__":
-    linkedin_username = 'oceanus315@gmail.com'
-    linkedin_password = 'Vampirezzy2'
+    linkedin_username = ''
+    linkedin_password = ''
 
     # Path to the CSV file with profile URLs
     profile_links_file = '/Users/oceanuszhang/Desktop/linkedin/venv/selenium_url/procurement_officers/procurement_officer_profile_links.csv'
