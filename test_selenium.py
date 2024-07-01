@@ -2,9 +2,11 @@
 import time
 import csv
 import os
+import json
 from tqdm import tqdm
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
@@ -12,18 +14,20 @@ from bs4 import BeautifulSoup
 
 #%%
 # Step 1: Scrape the URLs with key word
+# Loged in too many times and LinkedIn ask for verification now
 class LinkedInScraper:
-    def __init__(self, username, password):
+    def __init__(self, username=None, password=None):
         self.username = username
         self.password = password
-        # Setup ChromeDriver using ChromeDriverManager
-        service = Service(ChromeDriverManager().install())
-        self.driver = webdriver.Chrome(service=service)
+        chromedriver_path = "/Users/oceanuszhang/Desktop/chromedriver-mac-arm64/chromedriver"
+        service = Service(chromedriver_path)
+        options = Options()
+        self.driver = webdriver.Chrome(service=service, options=options)
 
     def login(self):
         """Log in to LinkedIn."""
         self.driver.get('https://www.linkedin.com/login')
-        time.sleep(2)  # Wait for the page to load
+        time.sleep(2) 
 
         username_input = self.driver.find_element(By.NAME, 'session_key')
         password_input = self.driver.find_element(By.NAME, 'session_password')
@@ -32,11 +36,10 @@ class LinkedInScraper:
         password_input.send_keys(self.password)
         password_input.send_keys(Keys.RETURN)
 
-        time.sleep(5)  # Wait for login to complete
+        time.sleep(5) 
 
     def search(self, keywords, page, location='United States'):
         """Perform a search on LinkedIn and navigate to a specific page."""
-        # geoUrn for different locations
         geo_urns = {
             'United States': '103644278',
         }
@@ -58,7 +61,7 @@ class LinkedInScraper:
 
         return profile_links
 
-    def scrape(self, keywords, num_pages=1):
+    def scrape(self, keywords, num_pages=10):
         """Main method to perform login, search, and get profile links."""
         self.login()
 
@@ -76,18 +79,18 @@ class LinkedInScraper:
         return all_profile_links
 
 #%%
-# Getting URLs - Usage
+# Getting URLs 
 if __name__ == "__main__":
     linkedin_username = ''
     linkedin_password = ''  
 
-    keyword = 'procurement officer'
+    keyword = 'Procurement Cfficer at University'
     scraper = LinkedInScraper(linkedin_username, linkedin_password)
-    profile_links = scraper.scrape(keyword, num_pages=1)
+    profile_links = scraper.scrape(keyword, num_pages=10)
 
     profile_links = list(set(profile_links))
 
-    output_dir = '/Users/oceanuszhang/Desktop/linkedin/venv/selenium_url/procurement_officers'
+    output_dir = '//Users/oceanuszhang/Documents/GitHub/linkedin_scraper/selenium_url/procourment_officer'
     output_file = os.path.join(output_dir, f"{keyword.replace(' ', '_')}_profile_links.csv")
 
     os.makedirs(output_dir, exist_ok=True)
@@ -96,6 +99,107 @@ if __name__ == "__main__":
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow(['Linkedin Profile URL'])  
         for profile_link in profile_links:
+            csvwriter.writerow([profile_link])
+
+    print(f"Profile links have been saved to {output_file}")
+
+#%%
+# Step 1: Alternative Approach: Manual Log in
+class LinkedInScraper:
+    def __init__(self):
+        service = Service(ChromeDriverManager().install())
+        options = Options()
+        # options.add_argument("--headless")  # Run in headless mode
+        self.driver = webdriver.Chrome(service=service, options=options)
+
+    def manual_login(self):
+        """Perform manual login to handle verification."""
+        self.driver.get('https://www.linkedin.com/login')
+        input("Please log in manually and press Enter here once logged in...")
+        cookies = self.driver.get_cookies()
+        with open('cookies.pkl', 'wb') as file:
+            pickle.dump(cookies, file)
+        print("Cookies have been saved.")
+#%%
+# Usage
+if __name__ == "__main__":
+    scraper = LinkedInScraper()
+    scraper.manual_login()
+#%%
+class LinkedInScraper:
+    def __init__(self):
+        service = Service(ChromeDriverManager().install())
+        options = Options()
+        # options.add_argument("--headless")  # Run in headless mode
+        self.driver = webdriver.Chrome(service=service, options=options)
+
+    def load_cookies(self):
+        """Load cookies from file."""
+        self.driver.get('https://www.linkedin.com')
+        with open('cookies.pkl', 'rb') as file:
+            cookies = pickle.load(file)
+        for cookie in cookies:
+            self.driver.add_cookie(cookie)
+        self.driver.refresh()
+        time.sleep(5)  # Wait for the page to load
+
+    def search(self, keywords, page, location='United States'):
+        """Perform a search on LinkedIn and navigate to a specific page."""
+        geo_urn = '103644278'  # United States geoUrn
+        search_url = f'https://www.linkedin.com/search/results/people/?keywords={keywords}&origin=GLOBAL_SEARCH_HEADER&page={page}&geoUrn=%5B%22{geo_urn}%22%5D'
+        self.driver.get(search_url)
+        time.sleep(5)  # Wait for the search results to load
+
+    def get_profile_links(self):
+        """Parse the search results and get profile links."""
+        soup = BeautifulSoup(self.driver.page_source, 'html.parser')
+
+        profile_links = []
+        for link in soup.find_all('a', href=True):
+            url = link['href']
+            if 'linkedin.com/in/' in url:
+                full_url = f"https://www.linkedin.com{url}" if url.startswith('/') else url
+                profile_links.append(full_url)
+
+        return profile_links
+
+    def scrape(self, keywords, num_pages=3):
+        """Main method to perform login, search, and get profile links."""
+        self.load_cookies()
+
+        all_profile_links = []
+
+        for page in tqdm(range(1, num_pages + 1), desc="Scraping pages", unit="page"):
+            self.search(keywords, page)
+            profile_links = self.get_profile_links()
+            all_profile_links.extend(profile_links)
+
+        # Remove duplicates
+        all_profile_links = list(set(all_profile_links))
+
+        self.driver.quit()
+        return all_profile_links
+#%%
+# Usage
+if __name__ == "__main__":
+    scraper = LinkedInScraper()
+    scraper.load_cookies()  # Load cookies to reuse the session
+
+    # Proceed with scraping using the saved cookies
+    profile_links = scraper.scrape('procurement officer at University', num_pages=3)
+
+    profile_links = list(set(profile_links))
+
+    keyword = 'Procurement Officer at University'
+    output_dir = '/Users/oceanuszhang/Documents/GitHub/linkedin_scraper/selenium_url/procourment_officer'
+    output_file = os.path.join(output_dir, f"{keyword.replace(' ', '_')}_profile_links.csv")
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    with open(output_file, 'w', newline='') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(['Linkedin Profile URL'])
+        for profile_link in tqdm(profile_links, desc="Saving profiles", unit="profile"):
             csvwriter.writerow([profile_link])
 
     print(f"Profile links have been saved to {output_file}")
@@ -184,7 +288,7 @@ class LinkedInProfileScraper:
 
         # Define the output directory and file path
         keyword = 'procurement officer'
-        output_dir = '/Users/oceanuszhang/Desktop/linkedin/venv/selenium_profiles/procurement_officers'
+        output_dir = '/Users/oceanuszhang/Documents/GitHub/linkedin_scraper/selenium_profile/procourment_officer'
         output_file = os.path.join(output_dir, f"{keyword.replace(' ', '_')}_profiles.csv")
 
         # Ensure the output directory exists
@@ -215,12 +319,10 @@ class LinkedInProfileScraper:
 # Usage for scraping profile details
 if __name__ == "__main__":
     linkedin_username = ''
-    linkedin_password = ''
+    linkedin_password = ''  
 
-    # Path to the CSV file with profile URLs
-    profile_links_file = '/Users/oceanuszhang/Desktop/linkedin/venv/selenium_url/procurement_officers/procurement_officer_profile_links.csv'
+    profile_links_file = '/Users/oceanuszhang/Documents/GitHub/linkedin_scraper/selenium_url/procourment_officer/'
 
-    # Load profile links from the CSV file
     profile_links = []
     with open(profile_links_file, 'r') as csvfile:
         csvreader = csv.reader(csvfile)
@@ -228,7 +330,6 @@ if __name__ == "__main__":
         for row in csvreader:
             profile_links.append(row[0])
 
-    # Create an instance of LinkedInProfileScraper, log in and scrape profiles
     profile_scraper = LinkedInProfileScraper(linkedin_username, linkedin_password)
     profile_scraper.login()
     profile_scraper.scrape_profiles(profile_links)
