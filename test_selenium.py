@@ -19,7 +19,7 @@ class LinkedInScraper:
     def __init__(self, username=None, password=None):
         self.username = username
         self.password = password
-        chromedriver_path = "/Users/oceanuszhang/Desktop/chromedriver-mac-arm64/chromedriver"
+        chromedriver_path = ""
         service = Service(chromedriver_path)
         options = Options()
         self.driver = webdriver.Chrome(service=service, options=options)
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     profile_links = list(set(profile_links))
 
-    output_dir = '//Users/oceanuszhang/Documents/GitHub/linkedin_scraper/selenium_url/procourment_officer'
+    output_dir = ''
     output_file = os.path.join(output_dir, f"{keyword.replace(' ', '_')}_profile_links.csv")
 
     os.makedirs(output_dir, exist_ok=True)
@@ -191,7 +191,7 @@ if __name__ == "__main__":
     profile_links = list(set(profile_links))
 
     keyword = 'Procurement Officer at University'
-    output_dir = '/Users/oceanuszhang/Documents/GitHub/linkedin_scraper/selenium_url/procourment_officer'
+    output_dir = ''
     output_file = os.path.join(output_dir, f"{keyword.replace(' ', '_')}_profile_links.csv")
 
     os.makedirs(output_dir, exist_ok=True)
@@ -288,7 +288,7 @@ class LinkedInProfileScraper:
 
         # Define the output directory and file path
         keyword = 'procurement officer'
-        output_dir = '/Users/oceanuszhang/Documents/GitHub/linkedin_scraper/selenium_profile/procourment_officer'
+        output_dir = ''
         output_file = os.path.join(output_dir, f"{keyword.replace(' ', '_')}_profiles.csv")
 
         # Ensure the output directory exists
@@ -321,7 +321,7 @@ if __name__ == "__main__":
     linkedin_username = ''
     linkedin_password = ''  
 
-    profile_links_file = '/Users/oceanuszhang/Documents/GitHub/linkedin_scraper/selenium_url/procourment_officer/'
+    profile_links_file = ''
 
     profile_links = []
     with open(profile_links_file, 'r') as csvfile:
